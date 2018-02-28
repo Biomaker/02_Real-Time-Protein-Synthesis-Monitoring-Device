@@ -1,1 +1,93 @@
 
+int ledPin = 9;      // LED connected to digital pin 9
+
+int brightness = 0;         // variable to store the read value
+
+
+boolean stringStart =  false;  // whether the string is start
+char delimiter_start = 's';
+char delimiter_end = 'e';
+String inputString = "";         // a string to hold incoming data
+boolean stringComplete = false;  // whether the string is complete
+
+// *************************************************************************************
+// ********************           Serial Event            ******************************
+// *************************************************************************************
+
+void serialEvent() {
+  while (Serial.available()) {
+    // get the new byte:
+    char inChar = (char)Serial.read();
+  //start messege
+    if (!stringStart && inChar == delimiter_start) {
+      stringStart = true;
+      continue;
+    } 
+    if (stringStart)
+    {      
+      //echo
+      //Serial.print(inChar);     
+      // add it to the inputString:
+      inputString += inChar;
+      // end messege
+      if (inChar == delimiter_end) {
+        stringComplete = true;
+        stringStart = false;
+      }
+    //check accumulated lengh of the massege
+      if(inputString.length() > 11) {
+        inputString =  "";
+        stringStart = false;
+      }
+    }
+  }
+}
+
+// *************************************************************************************
+// *************************************************************************************
+// *************************************************************************************  
+
+
+void setup()
+
+{
+
+  pinMode(ledPin, OUTPUT);   // sets the pin as output
+ analogWrite(ledPin, 0);  // analogRead values go from 0 to 1023, analogWrite values from 0 to 255
+ Serial.begin(9600);
+ inputString.reserve(10);
+}
+
+
+
+void loop()
+
+{
+
+  if (stringComplete)
+  {
+    String command = inputString;   //Serial.readString();
+    inputString = "";
+    stringComplete = false;
+
+    if (command[1] == delimiter_end)
+                {
+                  brightness = (int(command[0]) - 48);
+                }
+                else if (command[2] == delimiter_end)
+                {
+                  brightness = ((int(command[0]) - 48) * 10) + (int(command[1]) - 48);
+                }
+                else
+                {
+                  brightness = ((int(command[0]) - 48) * 100) + ((int(command[1]) - 48) * 10) + (int(command[2]) - 48);
+                  if (brightness > 255) brightness = 255;
+                }
+    //brightness = Serial.read();
+    Serial.print(String(delimiter_start) + String(brightness) + String(delimiter_end));
+    // set the brightness of the LED:
+    analogWrite(ledPin, brightness);
+  }
+  
+
+}
